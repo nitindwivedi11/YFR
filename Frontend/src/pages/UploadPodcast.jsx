@@ -34,7 +34,7 @@ export default function UploadPodcast() {
       console.log(res)
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Upload failed");
-      // toast.push("Podcast uploaded — pending admin approval");
+      toast.push("Podcast uploaded — pending admin approval");
       setTitle(""); setDesc(""); setCategory(""); setAudioFile(null); setCover(null);
     } catch (err) {
       console.log(err)
