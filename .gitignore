@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 .env
 *.env
+./Backend/.env
+./Backend/node_modules
+
 
 
 node_modules
