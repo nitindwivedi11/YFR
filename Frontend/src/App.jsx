@@ -38,7 +38,12 @@ export default function App() {
               <Suspense fallback={<div className="pt-24 text-center p-8">Loading...</div>}>
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/categories" element={
+                    <ProtectedRoute>
+
+                      <Categories />
+                    </ProtectedRoute>
+                    } />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />

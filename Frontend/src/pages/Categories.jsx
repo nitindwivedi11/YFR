@@ -2,12 +2,12 @@ import React from "react";
 import CategoryCard from "../components/CategoryCard";
 
 const categories = [
-  { title: "Technology", description: "Innovation, AI & more.", image: "/images/categories/tech.png", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-  { title: "Health & Wellness", description: "Mindfulness, fitness.", image: "/images/categories/health.png", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-  { title: "Education", description: "Learning & teaching.", image: "/images/categories/education.png", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-  { title: "Business", description: "Startups, marketing.", image: "/images/categories/business.png", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-  { title: "Travel", description: "Stories & guide.", image: "/images/categories/travel.png", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
-  { title: "Motivation", description: "Inspiration & drive.", image: "/images/categories/motivation.png", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" }
+  { title: "Technology", description: "Innovation, AI & more.", image: "/images/categories/tech.png", audio: "/song/tech_ai.mp3" },
+  { title: "Health & Wellness", description: "Mindfulness, fitness.", image: "/images/categories/health.png", audio: "/song/health_mind.mp3" },
+  { title: "Education", description: "Learning & teaching.", image: "/images/categories/education.png", audio: "/song/education_covid.mp3" },
+  { title: "Business", description: "Startups, marketing.", image: "/images/categories/business.png", audio: "/song/business_kidnapping.mp3" },
+  { title: "Travel", description: "Stories & guide.", image: "/images/categories/travel.png", audio: "/song/travel_tech.mp3" },
+  { title: "Motivation", description: "Inspiration & drive.", image: "/images/categories/motivation.png", audio: "/song/motivation_latent.mp3" }
 ];
 
 export default function Categories() {
