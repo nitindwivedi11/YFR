@@ -13,10 +13,20 @@ export default function UploadPodcast() {
   const [cover, setCover] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const CATEGORIES = [
+    "Technology", "Health & Wellness", "Education", "Business", "Entertainment", "Science", "History", "True Crime", "Comedy", "News"
+  ];
+
+  const [categories] = useState(CATEGORIES);
+
+  React.useEffect(() => {
+    if (categories.length > 0) setCategory(categories[0]);
+  }, []);
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!audioFile) return toast.push("Please attach an audio file");
-    setLoading(true);
+    // if (!audioFile) return console.log("file is required")
+    // setLoading(true);
     const fd = new FormData();
     fd.append("title", title);
     fd.append("description", desc);
@@ -30,12 +40,15 @@ export default function UploadPodcast() {
         headers: { Authorization: token ? `Bearer ${token}` : undefined },
         body: fd,
       });
+      console.log(res)
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Upload failed");
       toast.push("Podcast uploaded — pending admin approval");
-      setTitle(""); setDesc(""); setCategory(""); setAudioFile(null); setCover(null);
+      setTitle(""); setDesc(""); setAudioFile(null); setCover(null);
+      if (categories.length > 0) setCategory(categories[0]);
     } catch (err) {
-      toast.push(err.message || "Upload error");
+      console.log(err)
+      // toast.push(err.message || "Upload error");
     } finally { setLoading(false); }
   };
 
@@ -46,7 +59,13 @@ export default function UploadPodcast() {
         <form onSubmit={submit} className="space-y-4">
           <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title" className="w-full p-3 border rounded bg-transparent" />
           <textarea value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="Short description" className="w-full p-3 border rounded bg-transparent" />
-          <input value={category} onChange={(e)=>setCategory(e.target.value)} placeholder="Category (name or id)" className="w-full p-3 border rounded bg-transparent" />
+          
+          <select value={category} onChange={(e)=>setCategory(e.target.value)} className="w-full p-3 border rounded bg-transparent">
+            <option value="">Select Category (Optional)</option>
+            {categories.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
           <div>
             <label className="block mb-1">Audio file (mp3)</label>
             <input type="file" accept="audio/*" onChange={(e)=>setAudioFile(e.target.files[0])}/>

@@ -1,5 +1,5 @@
-import Podcast from "../models/Podcast.js";
-import Category from "../models/Category.js";
+import Podcast from "../models/podcast.js";
+import Category from "../models/category.js";
 
 export async function listPendingPodcasts(req, res, next) {
   try {

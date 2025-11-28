@@ -10,7 +10,7 @@ const commentSchema = new mongoose.Schema({
 const podcastSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
-  category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+  category: { type: String, required: true },
   audioUrl: { type: String, required: true },
   coverImage: String,
   duration: Number,

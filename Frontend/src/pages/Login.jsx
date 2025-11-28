@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -14,7 +15,8 @@ export default function Login() {
     const res = await login(email, password);
     if (res.success) {
       toast.success("Logged in successfully");
-      nav("/");
+      const from = location.state?.from?.pathname || "/";
+      nav(from, { replace: true });
     } else {
       toast.error(res.message || "Login failed");
     }

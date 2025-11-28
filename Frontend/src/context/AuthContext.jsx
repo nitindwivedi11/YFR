@@ -12,18 +12,20 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log("AuthContext: Token changed:", token);
     if (token) {
       try {
-        
         const decoded = jwtDecode(token);
-
+        console.log("AuthContext: Decoded token:", decoded);
         setUser({ id: decoded.id, email: decoded.email, role: decoded.role, name: decoded.name });
         localStorage.setItem("yfr_token", token);
       } catch (err) {
+        console.error("AuthContext: Token decode error:", err);
         setToken(null);
         localStorage.removeItem("yfr_token");
       }
     } else {
+      console.log("AuthContext: No token, clearing user");
       setUser(null);
       localStorage.removeItem("yfr_token");
     }

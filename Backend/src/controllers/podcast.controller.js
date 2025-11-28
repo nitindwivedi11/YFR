@@ -1,4 +1,6 @@
-import Podcast from "../models/Podcast.js";
+
+import Podcast from "../models/podcast.js";
+
 import cloudinary from "../utils/cloudinary.js";
 import fs from "fs/promises";
 
@@ -33,21 +35,24 @@ export async function uploadPodcast(req, res, next) {
     // Upload audio to Cloudinary as "video" resource type
     const audioResp = await cloudinary.uploader.upload(audio.path, { resource_type: "video" });
     let coverResp = null;
-    if (cover) coverResp = await cloudinary.uploader.upload(cover.path);
+    
+    if (cover) coverResp = await cloudinary.uploader.upload(cover.path); 
 
     // cleanup temporary files
     await fs.unlink(audio.path).catch(()=>{});
     if (cover) await fs.unlink(cover.path).catch(()=>{});
-
+    console.log("just uploading")
+    console.log(req.user)
     const podcast = await Podcast.create({
       title,
       description,
-      category,
+      category: category || "Business", // Default to Business if empty
       audioUrl: audioResp.secure_url,
       coverImage: coverResp?.secure_url || null,
       createdBy: req.user._id,
       approved: false
     });
+    console.log("done")
 
     res.status(201).json(podcast);
   } catch (err) { next(err); }

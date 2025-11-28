@@ -6,6 +6,7 @@ import DarkToggle from "./DarkToggle";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
+  console.log("Navbar: Current user:", user);
   const nav = useNavigate();
 
   const handleLogout = () => { logout(); nav("/"); };
@@ -27,6 +28,8 @@ export default function Navbar() {
             <DarkToggle />
             {user ? (
               <>
+                <Link to="/upload" className="hover:text-indigo-600">Upload</Link>
+                <Link to="/request-category" className="hover:text-indigo-600">Request Category</Link>
                 <Link to="/profile" className="px-3 py-1 border rounded-md text-sm">{user.name}</Link>
                 {user.role === "admin" && <Link to="/admin" className="px-3 py-1 bg-indigo-600 text-white rounded-md">Admin</Link>}
                 <button onClick={handleLogout} className="px-3 py-1 border rounded-md text-sm">Logout</button>
@@ -52,7 +55,20 @@ export default function Navbar() {
           <Link to="/categories" onClick={() => setIsOpen(false)}>Categories</Link>
           <Link to="/about" onClick={() => setIsOpen(false)}>About</Link>
           <Link to="/contact" onClick={() => setIsOpen(false)}>Contact</Link>
-          <Link to="/login" onClick={() => setIsOpen(false)}>Login</Link>
+          {user ? (
+            <>
+              <Link to="/upload" onClick={() => setIsOpen(false)}>Upload Podcast</Link>
+              <Link to="/request-category" onClick={() => setIsOpen(false)}>Request Category</Link>
+              <Link to="/profile" onClick={() => setIsOpen(false)} className="font-semibold">{user.name}</Link>
+              {user.role === "admin" && <Link to="/admin" onClick={() => setIsOpen(false)} className="text-indigo-600">Admin Dashboard</Link>}
+              <button onClick={() => { handleLogout(); setIsOpen(false); }} className="text-left text-red-500">Logout</button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" onClick={() => setIsOpen(false)}>Login</Link>
+              <Link to="/signup" onClick={() => setIsOpen(false)} className="text-indigo-600 font-semibold">Signup</Link>
+            </>
+          )}
         </div>
       )}
     </nav>

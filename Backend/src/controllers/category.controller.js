@@ -1,4 +1,4 @@
-import Category from "../models/Category.js";
+import Category from "../models/category.js";
 import cloudinary from "../utils/cloudinary.js";
 import fs from "fs/promises";
 
@@ -35,6 +35,7 @@ export async function requestCategory(req, res, next) {
       createdBy: req.user._id,
       status: "pending"
     });
+    console.log(cat)
 
     res.status(201).json(cat);
   } catch (err) { next(err); }
