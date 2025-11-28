@@ -22,7 +22,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex gap-6 items-center">
             <Link to="/" className="hover:text-indigo-600">Home</Link>
-            <Link to="/categories" className="hover:text-indigo-600">Categories</Link>
+           {  user && <Link to="/categories" className="hover:text-indigo-600">Categories</Link>}
             <Link to="/about" className="hover:text-indigo-600">About</Link>
             <Link to="/contact" className="hover:text-indigo-600">Contact</Link>
             <DarkToggle />
@@ -59,7 +59,7 @@ export default function Navbar() {
             <>
               <Link to="/upload" onClick={() => setIsOpen(false)}>Upload Podcast</Link>
               <Link to="/request-category" onClick={() => setIsOpen(false)}>Request Category</Link>
-              <Link to="/profile" onClick={() => setIsOpen(false)} className="font-semibold">{user.name}</Link>
+              <Link to="/ " onClick={() => setIsOpen(false)} className="font-semibold">{user.name}</Link>
               {user.role === "admin" && <Link to="/admin" onClick={() => setIsOpen(false)} className="text-indigo-600">Admin Dashboard</Link>}
               <button onClick={() => { handleLogout(); setIsOpen(false); }} className="text-left text-red-500">Logout</button>
             </>
