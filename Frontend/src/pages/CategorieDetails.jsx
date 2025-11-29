@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios, { Axios } from "axios";
 import { ThumbsUp, MessageCircle } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 /**
  * Uses your backend:
@@ -15,7 +16,7 @@ import { ThumbsUp, MessageCircle } from "lucide-react";
 //   ? `${process.env.REACT_APP_API_BASE.replace(/\/$/, "")}/api/podcasts`
 //   : "http://localhost:5000/api/podcasts";
 
-export default function CategoryCard({ id }) {
+export default function CategoryCard() {
   const [podcast, setPodcast] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -23,6 +24,7 @@ export default function CategoryCard({ id }) {
   const [posting, setPosting] = useState(false);
   const [voting, setVoting] = useState(false);
   const [error, setError] = useState(null);
+  const {id}=useParams()
 
   const audioRef = useRef(null);
 
@@ -47,8 +49,8 @@ export default function CategoryCard({ id }) {
     setLoading(true);
     setError(null);
     try {
-      Axios.API
-      const res = await axios.get(`http://localhost:5000/api/podcasts/get`,id);
+      console.log(id)
+      const res = await axios.post(`http://localhost:5000/api/podcasts/get`,{id});
       const doc = res.data;
       setPodcast(doc);
       setComments(Array.isArray(doc.comments) ? doc.comments : []);
@@ -60,7 +62,7 @@ export default function CategoryCard({ id }) {
     }
   };
 
-  useEffect(() => {
+  useEffect(() => { 
     fetchPodcast();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -86,7 +88,7 @@ export default function CategoryCard({ id }) {
     setNewComment("");
 
     try {
-      const res = await axios.post(`${API}/${id}/comments`, { text });
+      const res = await axios.post(`${id}/comments`, { text });
       const created = res.data;
       // replace temp with created if server returns object
       setComments((p) => p.map((c) => (c._id === tempId ? created : c)));

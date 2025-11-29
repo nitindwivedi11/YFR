@@ -14,8 +14,7 @@ export async function listPodcasts(req, res, next) {
 
 export async function getPodcast(req, res, next) {
   try {
-
-    console.log(req.body)
+    console.log(req.json)
     console.log("wer are here")
 
     const p = await Podcast.findById(req.body.id).populate("createdBy", "name email").populate("comments.user", "name");
