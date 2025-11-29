@@ -8,9 +8,9 @@ const upload = multer({ dest: "/tmp/uploads" }); // temp folder - ensure exists 
 const router = express.Router();
 
 router.get("/", listPodcasts);
-router.get("/get", getPodcast);
+router.post("/get", getPodcast);
 router.post("/", auth,upload.fields([{ name: "audio", maxCount: 1 }, { name: "cover", maxCount: 1 }]), uploadPodcast);
-router.post("/:id/comments", auth, addComment);
-router.post("/:id/upvote", auth, toggleUpvote);
+router.post("/get/comments", auth, addComment);
+router.post("/get/upvote", auth, toggleUpvote);
 
 export default router;

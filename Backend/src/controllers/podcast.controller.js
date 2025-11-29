@@ -14,8 +14,7 @@ export async function listPodcasts(req, res, next) {
 
 export async function getPodcast(req, res, next) {
   try {
-
-    console.log(req.body)
+    console.log(req.json)
     console.log("wer are here")
 
     const p = await Podcast.findById(req.body.id).populate("createdBy", "name email").populate("comments.user", "name");
@@ -73,18 +72,29 @@ export async function addComment(req, res, next) {
 
 export async function toggleUpvote(req, res, next) {
   try {
-    const p = await Podcast.findById(req.params.id);
+    console.log("asdf")
+    const {id}=req.body
+    const p = await Podcast.findById(id);
     if (!p) return res.status(404).json({ message: "Podcast not found" });
     const userId = req.user._id.toString();
     const idx = p.upvotes.findIndex(id => id.toString() === userId);
+    console.log("asdfasdf")
     if (idx >= 0) {
       p.upvotes.splice(idx, 1);
       await p.save();
-      return res.json({ upvoted: false });
+      return res.json({ 
+  upvoted: false,
+  upvotes: p.upvotes.length 
+});
     } else {
       p.upvotes.push(req.user._id);
       await p.save();
-      return res.json({ upvoted: true });
+      return res.json({ 
+  upvoted: true,
+  upvotes: p.upvotes.length 
+});
     }
-  } catch (err) { next(err); }
+  } catch (err) { 
+    console.log(err)
+    next(err); }
 }
