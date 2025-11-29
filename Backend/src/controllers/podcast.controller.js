@@ -18,6 +18,7 @@ export async function getPodcast(req, res, next) {
     console.log("wer are here")
 
     const p = await Podcast.findById(req.body.id).populate("createdBy", "name email").populate("comments.user", "name");
+    
     if (!p) return res.status(404).json({ message: "Not found" });
     res.json(p);
   } catch (err) { next(err); }
@@ -56,20 +57,51 @@ export async function uploadPodcast(req, res, next) {
     res.status(201).json(podcast);
   } catch (err) { next(err); }
 }
-
 export async function addComment(req, res, next) {
   try {
-    const { text } = req.body;
-    if (!text) return res.status(400).json({ message: "Comment text required" });
-    const p = await Podcast.findById(req.params.id);
-    if (!p) return res.status(404).json({ message: "Podcast not found" });
-    const comment = { user: req.user._id, userName: req.user.name, text };
-    p.comments.unshift(comment);
-    await p.save();
-    res.json({ success: true, comment });
-  } catch (err) { next(err); }
-}
+    const { id, text } = req.body;
 
+    if (!text) {
+      return res.status(400).json({ message: "Comment text required" });
+    }
+
+    // find podcast
+    const p = await Podcast.findById(id).populate("comments.user", "name");
+    if (!p) {
+      return res.status(404).json({ message: "Podcast not found" });
+    }
+
+    // Create comment object
+    const comment = {
+      user: req.user._id,
+      text,
+      createdAt: new Date(),
+    };
+
+    // Add comment to beginning
+    p.comments.unshift(comment);
+
+    // Save
+    await p.save();
+
+    // Re-populate to get the user name
+    await p.populate("comments.user", "name");
+
+    // Newest comment is the first
+    const created = p.comments[0];
+
+    return res.json({
+      success: true,
+      comment: created,             // return the created comment
+      comments: p.comments,         // full updated list
+      count: p.comments.length,     // number of comments
+    });
+
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+}
 export async function toggleUpvote(req, res, next) {
   try {
     console.log("asdf")
