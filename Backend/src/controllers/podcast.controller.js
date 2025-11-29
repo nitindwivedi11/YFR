@@ -14,7 +14,11 @@ export async function listPodcasts(req, res, next) {
 
 export async function getPodcast(req, res, next) {
   try {
-    const p = await Podcast.findById(req.params.id).populate("createdBy", "name email").populate("comments.user", "name");
+
+    console.log(req.body)
+    console.log("wer are here")
+
+    const p = await Podcast.findById(req.body.id).populate("createdBy", "name email").populate("comments.user", "name");
     if (!p) return res.status(404).json({ message: "Not found" });
     res.json(p);
   } catch (err) { next(err); }

@@ -1,89 +1,236 @@
-import { useParams } from "react-router-dom";
-import { useState } from "react";
-import { ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import axios, { Axios } from "axios";
+import { ThumbsUp, MessageCircle } from "lucide-react";
 
-export default function CategoryDetails() {
-  const { id } = useParams();
+/**
+ * Uses your backend:
+ * GET  /api/podcasts/:id         -> returns podcast doc (with .comments populated)
+ * POST /api/podcasts/:id/comments -> body { text } -> returns created comment object
+ * POST /api/podcasts/:id/upvote   -> toggles upvote for current user -> returns updated podcast or updated upvote count
+ *
+ * Expects comment.user.name to be populated (per your getPodcast).
+ */
 
-  // Dummy data (you will replace with API/backend)
-  const item = {
-    title: "Sample Episode",
-    description: "Deep dive discussion on important topic",
-    coverImage: "/sample.jpg",
-    audioUrl: "/audio.mp3"
-  };
+// const API = process.env.REACT_APP_API_BASE
+//   ? `${process.env.REACT_APP_API_BASE.replace(/\/$/, "")}/api/podcasts`
+//   : "http://localhost:5000/api/podcasts";
 
-  const [up, setUp] = useState(24);
-  const [down, setDown] = useState(3);
+export default function CategoryCard({ id }) {
+  const [podcast, setPodcast] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+  const [voting, setVoting] = useState(false);
+  const [error, setError] = useState(null);
 
-  const postComment = () => {
-    if (!newComment.trim()) return;
-    setComments([...comments, newComment]);
-    setNewComment("");
+  const audioRef = useRef(null);
+
+  // apply auth header once per mount (axios default)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    else delete axios.defaults.headers.common["Authorization"];
+  }, []);
+
+  // helper to read upvote count defensively
+  const readUpvotes = (p) => {
+    if (!p) return 0;
+    return p.upvotes ?? p.upvoteCount ?? p.likes ?? (p.stats && p.stats.up) ?? 0;
   };
 
+  // helper to read cover url defensively
+  const readCover = (p) => p?.coverImage ?? p?.coverUrl ?? p?.cover ?? "";
+
+  // fetch podcast (full doc with comments)
+  const fetchPodcast = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      Axios.API
+      const res = await axios.get(`http://localhost:5000/api/podcasts/get`,id);
+      const doc = res.data;
+      setPodcast(doc);
+      setComments(Array.isArray(doc.comments) ? doc.comments : []);
+    } catch (err) {
+      console.error("fetchPodcast:", err);
+      setError(err.response?.data?.message || err.message || "Failed to load podcast");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPodcast();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // post comment (optimistic)
+  const handleAddComment = async () => {
+    const text = (newComment || "").trim();
+    if (!text) return;
+    setPosting(true);
+    setError(null);
+
+    const tempId = `temp-${Date.now()}`;
+    const tempComment = {
+      _id: tempId,
+      id: tempId,
+      text,
+      user: { _id: "me", name: "You" },
+      createdAt: new Date().toISOString(),
+      pending: true,
+    };
+
+    setComments((p) => [tempComment, ...p]);
+    setNewComment("");
+
+    try {
+      const res = await axios.post(`${API}/${id}/comments`, { text });
+      const created = res.data;
+      // replace temp with created if server returns object
+      setComments((p) => p.map((c) => (c._id === tempId ? created : c)));
+      // Optionally refresh podcast stats from server (if comment affects anything)
+      // await fetchPodcast();
+    } catch (err) {
+      console.error("addComment:", err);
+      // rollback: remove temp
+      setComments((p) => p.filter((c) => c._id !== tempId));
+      setNewComment(text); // restore so user can retry
+      setError(err.response?.data?.message || err.message || "Failed to post comment");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  // toggle upvote (optimistic)
+  const handleToggleUpvote = async () => {
+    if (voting || !podcast) return;
+    setVoting(true);
+    setError(null);
+
+    const prevPodcast = { ...podcast };
+    // optimistic increment (if backend toggles, we don't know state; here we just increment visually)
+    const optimisticUp = readUpvotes(podcast) + 1;
+
+    setPodcast((p) => ({ ...p, upvotes: optimisticUp }));
+
+    try {
+      const res = await axios.post(`${API}/${id}/upvote`);
+      // backend may return full podcast doc or an object with upvotes
+      const data = res.data;
+      if (data && (data.upvotes || data.upvoteCount || data.stats || data.title)) {
+        // looks like full/partial podcast doc
+        // prefer full doc if present
+        const updatedDoc = data.title ? data : podcast;
+        setPodcast((prev) => ({ ...prev, ...updatedDoc }));
+      } else if (typeof data.upvotes === "number" || typeof data.up === "number") {
+        setPodcast((prev) => ({ ...prev, upvotes: data.upvotes ?? data.up }));
+      } else {
+        // fallback: refresh whole podcast
+        await fetchPodcast();
+      }
+    } catch (err) {
+      console.error("toggleUpvote:", err);
+      setError(err.response?.data?.message || err.message || "Failed to upvote");
+      // rollback
+      setPodcast(prevPodcast);
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
+  if (error && !podcast) return <div className="p-4 text-center text-red-600">Error: {error}</div>;
+  if (!podcast) return <div className="p-4">Podcast not found</div>;
+
+  const upvoteCount = readUpvotes(podcast);
+  const cover = readCover(podcast);
+  const title = podcast.title ?? podcast.name ?? "Untitled";
+  const description = podcast.description ?? podcast.summary ?? "";
+
   return (
-    <div className="w-full max-w-3xl mx-auto p-6">
-      
-      {/* BIG BANNER IMAGE */}
-      <div className="w-full h-64 rounded-2xl overflow-hidden shadow-lg">
-        <img src={item.coverImage} className="w-full h-full object-cover" />
-      </div>
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg max-w-sm w-full">
+      {/* Cover */}
+      {cover ? (
+        <img src={cover} alt={title} className="w-full h-48 object-cover rounded-md" />
+      ) : (
+        <div className="w-full h-48 bg-gray-200 rounded-md flex items-center justify-center text-gray-500">No cover</div>
+      )}
 
-      {/* TITLE + DESCRIPTION */}
-      <h1 className="text-3xl font-bold mt-5">{item.title}</h1>
-      <p className="text-gray-600 mt-2">{item.description}</p>
+      <h3 className="text-lg font-semibold mt-3">{title}</h3>
+      <p className="text-sm text-gray-600 mt-1 line-clamp-3">{description}</p>
 
-      {/* PLAYER */}
-      <audio src={item.audioUrl} controls className="w-full mt-4" />
+      {/* Audio */}
+      {podcast.audioUrl ? (
+        <audio ref={audioRef} src={podcast.audioUrl} controls className="mt-3 w-full" />
+      ) : null}
 
-      {/* ACTION SECTION */}
-      <div className="flex gap-6 mt-6 items-center">
-        <button className="flex items-center gap-2" onClick={() => setUp(up + 1)}>
-          <ThumbsUp size={20} className="text-green-600" />
-          <span>{up}</span>
+      {/* Actions */}
+      <div className="flex items-center justify-between mt-3">
+        <button
+          onClick={handleToggleUpvote}
+          disabled={voting}
+          className="flex items-center gap-2 text-indigo-600 hover:opacity-80"
+        >
+          <ThumbsUp size={18} />
+          <span>{upvoteCount}</span>
         </button>
 
-        <button className="flex items-center gap-2" onClick={() => setDown(down + 1)}>
-          <ThumbsDown size={20} className="text-red-600" />
-          <span>{down}</span>
-        </button>
-
-        <div className="flex items-center gap-2">
-          <MessageCircle size={20} />
-          <span>{comments.length} Comments</span>
+        <div className="flex items-center gap-2 text-gray-600">
+          <MessageCircle size={16} />
+          <span>{comments.length} comments</span>
         </div>
       </div>
 
-      {/* COMMENTS INPUT */}
-      <div className="mt-6">
+      {/* Comments (all) */}
+      <div className="mt-4">
+        <div className="text-sm font-semibold mb-2">Comments</div>
+
+        {comments.length === 0 ? (
+          <div className="text-sm text-gray-500">No comments yet.</div>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-auto pr-2">
+            {comments.map((c) => {
+              const author = c.user?.name ?? c.user?.email ?? "Anonymous";
+              return (
+                <div
+                  key={c._id ?? c.id}
+                  className={`p-2 rounded-md ${c.pending ? "opacity-70 bg-gray-50" : "bg-gray-100"}`}
+                >
+                  <div className="text-xs font-semibold text-gray-700">
+                    {author}
+                    <span className="ml-2 text-xs text-gray-500">{new Date(c.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="text-sm text-gray-800 mt-1">{c.text}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Add comment */}
         <textarea
-          className="w-full border rounded-xl p-3"
-          rows="3"
-          placeholder="Write a comment..."
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-        ></textarea>
+          className="w-full border rounded-md p-2 mt-3 text-sm"
+          rows={2}
+          placeholder="Write a comment..."
+          disabled={posting}
+        />
 
-        <button
-          onClick={postComment}
-          className="mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-        >
-          Post Comment
-        </button>
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            onClick={handleAddComment}
+            disabled={posting}
+            className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {posting ? "Posting..." : "Post"}
+          </button>
+
+          {error && <div className="text-xs text-red-500">{error}</div>}
+        </div>
       </div>
-
-      {/* COMMENTS LIST */}
-      <div className="mt-6 space-y-4">
-        {comments.map((c, i) => (
-          <div key={i} className="p-3 bg-gray-100 rounded-xl">
-            {c}
-          </div>
-        ))}
-      </div>
-
     </div>
   );
 }
